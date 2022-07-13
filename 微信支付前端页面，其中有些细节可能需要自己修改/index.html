@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+	</head>
+	<body>
+		<div id="app" >
+			<div id="codeDiv"></div>
+			当前是支付页面,订单号是: <span id="mySpan" >1</span> <br>请扫码支付
+			<h3 id="content"></h3>
+		</div>
+		<input type="button" value="点击" onclick="fn1()" />
+	</body>
+</html>
+<script type="text/javascript" src="js/jquery-1.11.0.js" ></script>
+<script src="js/qrcode.js"></script>
+<script>
+    new QRCode(document.getElementById("codeDiv"), "hello,world");
+</script>
+<script>
+
+function fn1(){
+	$("#content").text(111)
+//	$.post("http://localhost:8080/order?id=5",function(result){
+//		if(result.code==10000){
+//			$("#mySpan").text(result.data);
+//		}
+//	})
+}
+var websocket = null;
+    function abc() {
+        //var username = localStorage.getItem("name");
+        // var username=document.getElementById("me").value;
+        var username=document.getElementById("mySpan").innerText;//获取到订单号,以此为参数,告诉服务端我是谁
+        //判断当前浏览器是否支持WebSocket
+        if ('WebSocket' in window) {
+//          websocket = new WebSocket("ws://" + document.location.host + "/websocket/"+username);
+            websocket = new WebSocket("ws://9bhkvy.natappfree.cc/websocket/"+username);
+        } else {
+            alert('当前浏览器 Not support websocket')
+        }
+
+        //连接发生错误的回调方法
+        websocket.onerror = function() {
+            setMessageInnerHTML("{\"code\":\"S10001\", \"desc\":\"WebSocket连接发生错误\", \"url\":\"\"}");
+        };
+
+        //连接成功建立的回调方法
+        websocket.onopen = function() {
+            setMessageInnerHTML("{\"code\":\"S10000\", \"desc\":\"WebSocket连接成功\", \"url\":\"\"}");
+        }
+
+        //接收到消息的回调方法
+        websocket.onmessage = function(event) {
+            setMessageInnerHTML(event.data);
+        }
+
+        //连接关闭的回调方法
+        websocket.onclose = function() {
+            setMessageInnerHTML("{\"code\":\"S10002\", \"desc\":\"WebSocket连接关闭\", \"url\":\"\"}");
+        }
+
+        //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+        window.onbeforeunload = function() {
+            closeWebSocket();
+        }
+    }
+    //关闭WebSocket连接
+    function closeWebSocket() {
+        if (websocket!=null) {
+
+            websocket.close();
+        }
+    }
+
+    /**
+     * 直接将收到的数据显示到页面上,此处应该根据实际的业务逻辑来决定跳转页面
+     * @param data
+     */
+    function setMessageInnerHTML(data) {
+        var d = JSON.parse(data);
+        console.log(d)
+        if(d.code == "10000"){
+//      	$("#content").text(d.desc)
+            document.getElementById("content").innerHTML = d.desc;
+            setTimeout(function(){
+                location.href=d.url;
+            }, 5000);
+        }else{
+//          document.getElementById("content").innerHTML = d.desc;
+			$("#content").text(d.desc)
+        }
+    }
+    window.onLoad=abc();
+	
+</script>
